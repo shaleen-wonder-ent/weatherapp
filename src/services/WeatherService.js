@@ -250,6 +250,131 @@ class WeatherService {
       console.error('Error fetching weather by coordinates:', error);
       throw new Error('Failed to fetch weather data for your location');
     }
+
+  }
+
+  // Generate 5-day forecast data
+  static async getForecastByCity(city) {
+    try {
+      // Using mock data for demo - similar approach to current weather
+      const normalizedCity = city.toLowerCase().trim()
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Generate realistic 5-day forecast
+      const today = new Date()
+      const forecast = []
+      
+      const weatherConditions = [
+        { main: 'Clear', description: 'clear sky', icon: '01d' },
+        { main: 'Clouds', description: 'few clouds', icon: '02d' },
+        { main: 'Clouds', description: 'scattered clouds', icon: '03d' },
+        { main: 'Clouds', description: 'broken clouds', icon: '04d' },
+        { main: 'Rain', description: 'light rain', icon: '10d' },
+        { main: 'Rain', description: 'moderate rain', icon: '10d' }
+      ]
+
+      for (let i = 1; i <= 5; i++) {
+        const forecastDate = new Date(today)
+        forecastDate.setDate(today.getDate() + i)
+        
+        const randomWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)]
+        const baseTemp = 273.15 + (Math.random() * 30) // 0-30°C
+        const tempVariation = 5 // ±5 degrees for min/max
+        
+        forecast.push({
+          dt: Math.floor(forecastDate.getTime() / 1000),
+          dt_txt: forecastDate.toISOString().split('T')[0] + ' 12:00:00',
+          main: {
+            temp: baseTemp,
+            temp_min: baseTemp - tempVariation,
+            temp_max: baseTemp + tempVariation,
+            humidity: 40 + Math.random() * 40
+          },
+          weather: [randomWeather],
+          wind: { speed: Math.random() * 8 },
+          clouds: { all: Math.random() * 100 }
+        })
+      }
+
+      return {
+        list: forecast,
+        city: {
+          name: city.charAt(0).toUpperCase() + city.slice(1),
+          country: 'XX'
+        }
+      }
+
+      /* Production API call would be:
+      const response = await axios.get(`${BASE_URL}/forecast`, {
+        params: {
+          q: city,
+          appid: API_KEY,
+          cnt: 40 // 5 days * 8 (3-hour intervals)
+        }
+      })
+      
+      // Process the 5-day/3-hour forecast into daily data
+      const dailyForecasts = this.processForecastData(response.data)
+      return dailyForecasts
+      */
+      
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error(`Forecast for "${city}" not found. Please check the spelling and try again.`)
+      } else if (error.response?.status === 401) {
+        throw new Error('Invalid API key for forecast data.')
+      } else {
+        throw new Error('Unable to fetch forecast data. Please try again later.')
+      }
+    }
+  }
+
+  // Helper method to process 5-day/3-hour forecast into daily summaries
+  static processForecastData(apiData) {
+    const dailyData = {}
+    
+    apiData.list.forEach(item => {
+      const date = item.dt_txt.split(' ')[0]
+      
+      if (!dailyData[date]) {
+        dailyData[date] = {
+          dt: item.dt,
+          temps: [],
+          weather: item.weather[0],
+          humidity: item.main.humidity,
+          wind: item.wind,
+          clouds: item.clouds
+        }
+      }
+      
+      dailyData[date].temps.push(item.main.temp)
+    })
+    
+    // Convert to array and calculate daily min/max
+    return Object.keys(dailyData).slice(0, 5).map(date => {
+      const day = dailyData[date]
+      const temps = day.temps
+      
+      return {
+        dt: day.dt,
+        dt_txt: date + ' 12:00:00',
+        main: {
+          temp: temps.reduce((a, b) => a + b) / temps.length,
+          temp_min: Math.min(...temps),
+          temp_max: Math.max(...temps),
+          humidity: day.humidity
+        },
+        weather: [day.weather],
+        wind: day.wind,
+        clouds: day.clouds
+      }
+    })
+  }
+}
+
+=======
   }
 
   // Get 5-day forecast by city (real API integration)
@@ -334,5 +459,6 @@ class WeatherService {
     return forecast;
   }
 }
+
 
 export default WeatherService
