@@ -164,6 +164,93 @@ class WeatherService {
       }
     }
   }
+
+  // Get weather data by coordinates (for location detection)
+  static async getCurrentLocationWeather() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation is not supported by this browser'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            // For now, use mock data based on coordinates
+            // In production, this would call the API with lat/lon
+            const weather = await this.getWeatherByCoordinates(latitude, longitude);
+            resolve(weather);
+          } catch (error) {
+            reject(error);
+          }
+        },
+        (error) => {
+          let errorMessage = 'Unable to retrieve your location';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Location access denied by user';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Location information is unavailable';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Location request timed out';
+              break;
+            default:
+              errorMessage = 'An unknown error occurred';
+              break;
+          }
+          
+          reject(new Error(errorMessage));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        }
+      );
+    });
+  }
+
+  // Get weather by coordinates (latitude, longitude)
+  static async getWeatherByCoordinates(lat, lon) {
+    try {
+      // For demo purposes, return mock data based on approximate location
+      // In production, this would make an API call to OpenWeatherMap
+      
+      // Simple location matching based on coordinates
+      if (lat > 50 && lat < 52 && lon > -1 && lon < 1) {
+        // Approximate London area
+        return this.mockWeatherData['london'];
+      } else if (lat > 40 && lat < 41 && lon > -75 && lon < -73) {
+        // Approximate New York area
+        return this.mockWeatherData['new york'];
+      } else if (lat > 35 && lat < 36 && lon > 139 && lon < 140) {
+        // Approximate Tokyo area
+        return this.mockWeatherData['tokyo'];
+      } else {
+        // Default to a generic location weather
+        return {
+          ...this.mockWeatherData['london'],
+          name: 'Your Location',
+          coord: { lat, lon }
+        };
+      }
+
+      /* Production API call would be:
+      const response = await axios.get(
+        `${BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric`
+      );
+      return response.data;
+      */
+    } catch (error) {
+      console.error('Error fetching weather by coordinates:', error);
+      throw new Error('Failed to fetch weather data for your location');
+    }
+  }
 }
 
 export default WeatherService

@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, MapPin } from 'lucide-react'
 import './SearchBar.css'
 
-const SearchBar = ({ onSearch, loading }) => {
+const SearchBar = ({ onSearch, onLocationSearch, loading, locationLoading }) => {
   const [query, setQuery] = useState('')
 
   const handleSubmit = (e) => {
@@ -18,6 +18,12 @@ const SearchBar = ({ onSearch, loading }) => {
     }
   }
 
+  const handleLocationDetection = () => {
+    if (!locationLoading && onLocationSearch) {
+      onLocationSearch()
+    }
+  }
+
   return (
     <div className="search-bar">
       <form onSubmit={handleSubmit} className="search-form">
@@ -29,9 +35,18 @@ const SearchBar = ({ onSearch, loading }) => {
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Search for a city... (e.g., London, New York, Tokyo)"
-            className="search-input"
-            disabled={loading}
+            className="search-input"            disabled={loading}
           />
+          <button
+            type="button"
+            className={`location-button ${locationLoading ? 'loading' : ''}`}
+            onClick={handleLocationDetection}
+            disabled={loading || locationLoading}
+            title="Use my current location"
+          >
+            <MapPin size={16} />
+            {locationLoading ? 'Detecting...' : 'My Location'}
+          </button>
           <button
             type="submit"
             className={`search-button ${loading ? 'loading' : ''}`}

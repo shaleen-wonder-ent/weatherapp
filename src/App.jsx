@@ -4,9 +4,9 @@ import SearchBar from './components/SearchBar'
 import WeatherService from './services/WeatherService'
 import './App.css'
 
-function App() {
-  const [weatherData, setWeatherData] = useState(null)
+function App() {  const [weatherData, setWeatherData] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [locationLoading, setLocationLoading] = useState(false)
   const [error, setError] = useState(null)
   const [favorites, setFavorites] = useState([])
 
@@ -40,6 +40,21 @@ function App() {
     }
   }
 
+  const handleLocationSearch = async () => {
+    setLocationLoading(true)
+    setError(null)
+
+    try {
+      const data = await WeatherService.getCurrentLocationWeather()
+      setWeatherData(data)
+    } catch (err) {
+      setError(err.message || 'Failed to detect your location')
+      setWeatherData(null)
+    } finally {
+      setLocationLoading(false)
+    }
+  }
+
   const addToFavorites = (city) => {
     if (!favorites.includes(city)) {
       setFavorites([...favorites, city])
@@ -63,11 +78,11 @@ function App() {
             Weather App
           </h1>
           <p className="app-subtitle">Get current weather information for any city</p>
-        </header>
-
-        <SearchBar 
+        </header>        <SearchBar 
           onSearch={handleSearch}
+          onLocationSearch={handleLocationSearch}
           loading={loading}
+          locationLoading={locationLoading}
         />
 
         {favorites.length > 0 && (
