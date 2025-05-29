@@ -308,7 +308,7 @@ class WeatherService {
     }
   }
   // fallback mock for forecast
-  static async get5DayForecastByCity_mock(city) {
+  static async get5DayForecastByCity_mock(city) { // eslint-disable-line no-unused-vars
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     // Generate 5 days of mock forecast data
