@@ -1,0 +1,77 @@
+name: 🔍 Pull Request Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  validate:
+    name: 🧪 Validate Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📥 Install dependencies
+      run: npm ci
+      
+    - name: 🔍 Lint code
+      run: npm run lint --if-present
+      
+    - name: 🧪 Run tests
+      run: npm test --if-present
+      
+    - name: 🏗️ Build application
+      run: npm run build
+      
+    - name: 📊 Check build size
+      run: |
+        echo "📦 Build completed successfully!"
+        ls -la dist/
+        
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Run security audit
+      run: npm audit --audit-level high
+      
+  pr-checks:
+    name: ✅ PR Requirements
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: 📂 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔍 Check PR title
+      run: |
+        title="${{ github.event.pull_request.title }}"
+        if [[ ! "$title" =~ ^(feat|fix|docs|style|refactor|test|chore): ]]; then
+          echo "❌ PR title must start with a conventional commit type (feat:, fix:, docs:, etc.)"
+          exit 1
+        fi
+        echo "✅ PR title follows conventional commit format"
+        
+    - name: 🎯 Check issue reference
+      run: |
+        body="${{ github.event.pull_request.body }}"
+        if [[ ! "$body" =~ (Closes|Fixes|Resolves)\ #[0-9]+ ]]; then
+          echo "⚠️ Warning: PR should reference an issue with 'Closes #X', 'Fixes #X', or 'Resolves #X'"
+        else
+          echo "✅ PR properly references an issue"
+        fi
