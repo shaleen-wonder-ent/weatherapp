@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, MapPin } from 'lucide-react'
 import './SearchBar.css'
 
-const SearchBar = ({ onSearch, loading }) => {
+const SearchBar = ({ onSearch, onLocationSearch, loading }) => {
   const [query, setQuery] = useState('')
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [locationError, setLocationError] = useState(null)
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (query.trim() && !loading) {
+    if (query.trim() && !loading && !locationLoading) {
       onSearch(query.trim())
     }
   }
@@ -16,6 +18,59 @@ const SearchBar = ({ onSearch, loading }) => {
     if (e.key === 'Enter') {
       handleSubmit(e)
     }
+  }
+
+  const handleLocationClick = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser')
+      return
+    }
+
+    if (loading || locationLoading) return
+
+    setLocationLoading(true)
+    setLocationError(null)
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000 // 5 minutes
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        setLocationLoading(false)
+        onLocationSearch(latitude, longitude)
+      },
+      (error) => {
+        setLocationLoading(false)
+        let errorMessage = 'Unable to get your location'
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = 'Location access denied. Please enable location permissions and try again.'
+            break
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = 'Location information is unavailable. Please try again later.'
+            break
+          case error.TIMEOUT:
+            errorMessage = 'Location request timed out. Please try again.'
+            break
+          default:
+            errorMessage = 'An error occurred while getting your location.'
+            break
+        }
+        
+        setLocationError(errorMessage)
+        
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          setLocationError(null)
+        }, 5000)
+      },
+      options
+    )
   }
 
   return (
@@ -30,17 +85,33 @@ const SearchBar = ({ onSearch, loading }) => {
             onKeyPress={handleKeyPress}
             placeholder="Search for a city... (e.g., London, New York, Tokyo)"
             className="search-input"
-            disabled={loading}
+            disabled={loading || locationLoading}
           />
+          <button
+            type="button"
+            className={`location-button ${locationLoading ? 'loading' : ''}`}
+            onClick={handleLocationClick}
+            disabled={loading || locationLoading}
+            title="Use my current location"
+          >
+            <MapPin size={16} />
+            {locationLoading ? 'Locating...' : 'Use My Location'}
+          </button>
           <button
             type="submit"
             className={`search-button ${loading ? 'loading' : ''}`}
-            disabled={loading || !query.trim()}
+            disabled={loading || locationLoading || !query.trim()}
           >
             {loading ? 'Searching...' : 'Search'}
           </button>
         </div>
       </form>
+      
+      {locationError && (
+        <div className="location-error">
+          <p>📍 {locationError}</p>
+        </div>
+      )}
       
       <div className="quick-cities">
         <p>Quick search:</p>
@@ -50,7 +121,7 @@ const SearchBar = ({ onSearch, loading }) => {
               key={city}
               className="city-button"
               onClick={() => onSearch(city)}
-              disabled={loading}
+              disabled={loading || locationLoading}
             >
               {city}
             </button>

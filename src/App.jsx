@@ -40,6 +40,21 @@ function App() {
     }
   }
 
+  const handleLocationSearch = async (latitude, longitude) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const data = await WeatherService.getWeatherByCoordinates(latitude, longitude)
+      setWeatherData(data)
+    } catch (err) {
+      setError(err.message || 'Failed to fetch weather data for your location')
+      setWeatherData(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const addToFavorites = (city) => {
     if (!favorites.includes(city)) {
       setFavorites([...favorites, city])
@@ -67,6 +82,7 @@ function App() {
 
         <SearchBar 
           onSearch={handleSearch}
+          onLocationSearch={handleLocationSearch}
           loading={loading}
         />
 

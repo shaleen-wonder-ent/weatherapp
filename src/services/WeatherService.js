@@ -164,6 +164,102 @@ class WeatherService {
       }
     }
   }
+
+  static async getWeatherByCoordinates(latitude, longitude) {
+    try {
+      // Using mock data for demo - generate realistic weather data based on coordinates
+      const weatherConditions = [
+        { main: 'Clear', description: 'clear sky', icon: '01d' },
+        { main: 'Clouds', description: 'few clouds', icon: '02d' },
+        { main: 'Clouds', description: 'scattered clouds', icon: '03d' },
+        { main: 'Clouds', description: 'broken clouds', icon: '04d' },
+        { main: 'Rain', description: 'light rain', icon: '10d' },
+        { main: 'Rain', description: 'moderate rain', icon: '10d' }
+      ]
+
+      const randomWeather = weatherConditions[Math.floor(Math.random() * weatherConditions.length)]
+      const baseTemp = 273.15 + (Math.random() * 30) // 0-30°C
+      const humidity = 40 + Math.random() * 40 // 40-80%
+      const pressure = 1000 + Math.random() * 30 // 1000-1030 hPa
+      const windSpeed = Math.random() * 10 // 0-10 m/s
+
+      // Simple reverse geocoding simulation
+      const cityName = this.getCityNameFromCoordinates(latitude, longitude)
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000))
+
+      return {
+        coord: { lon: longitude, lat: latitude },
+        weather: [randomWeather],
+        base: 'stations',
+        main: {
+          temp: baseTemp,
+          feels_like: baseTemp + (Math.random() - 0.5) * 3,
+          temp_min: baseTemp - 2,
+          temp_max: baseTemp + 3,
+          pressure: Math.round(pressure),
+          humidity: Math.round(humidity)
+        },
+        visibility: 10000,
+        wind: { speed: windSpeed, deg: Math.random() * 360 },
+        clouds: { all: Math.random() * 100 },
+        dt: Date.now() / 1000,
+        sys: { type: 1, id: 1, country: 'XX', sunrise: 0, sunset: 0 },
+        timezone: 0,
+        id: Date.now(),
+        name: cityName,
+        cod: 200
+      }
+
+      // REAL API CODE - Uncomment when you have a valid API key
+      /*
+      const response = await axios.get(`${BASE_URL}/weather`, {
+        params: {
+          lat: latitude,
+          lon: longitude,
+          appid: API_KEY
+        }
+      })
+      return response.data
+      */
+      
+    } catch (error) {
+      if (error.response?.status === 401) {
+        throw new Error('Invalid API key. Please check your configuration.')
+      } else {
+        throw new Error('Unable to fetch weather data for your location. Please try again later.')
+      }
+    }
+  }
+
+  static getCityNameFromCoordinates(latitude, longitude) {
+    // Simple mock reverse geocoding - in real app this would use a reverse geocoding API
+    const cities = [
+      { name: 'Current Location', lat: 0, lon: 0 },
+      { name: 'New York', lat: 40.7143, lon: -74.006 },
+      { name: 'London', lat: 51.5085, lon: -0.1257 },
+      { name: 'Tokyo', lat: 35.6895, lon: 139.6917 },
+      { name: 'Paris', lat: 48.8534, lon: 2.3488 },
+      { name: 'Sydney', lat: -33.8678, lon: 151.2073 }
+    ]
+
+    // Find closest city for demo purposes
+    let closestCity = cities[0]
+    let minDistance = Infinity
+
+    cities.forEach(city => {
+      const distance = Math.sqrt(
+        Math.pow(latitude - city.lat, 2) + Math.pow(longitude - city.lon, 2)
+      )
+      if (distance < minDistance) {
+        minDistance = distance
+        closestCity = city
+      }
+    })
+
+    return closestCity.name === 'Current Location' ? 'Your Location' : closestCity.name
+  }
 }
 
 export default WeatherService
