@@ -4,11 +4,15 @@ import SearchBar from './components/SearchBar'
 import WeatherService from './services/WeatherService'
 import './App.css'
 
-function App() {  const [weatherData, setWeatherData] = useState(null)
+function App() {
+  const [weatherData, setWeatherData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
   const [error, setError] = useState(null)
   const [favorites, setFavorites] = useState([])
+  const [forecast, setForecast] = useState([])
+  const [forecastLoading, setForecastLoading] = useState(false)
+  const [forecastError, setForecastError] = useState(null)
 
   // Load favorites from localStorage on component mount
   useEffect(() => {
@@ -28,30 +32,56 @@ function App() {  const [weatherData, setWeatherData] = useState(null)
 
     setLoading(true)
     setError(null)
+    setForecast([])
+    setForecastError(null)
+    setForecastLoading(true)
 
     try {
       const data = await WeatherService.getWeatherByCity(city)
       setWeatherData(data)
+
+      try {
+        const forecastData = await WeatherService.get5DayForecastByCity(city)
+        setForecast(forecastData)
+      } catch (ferr) {
+        setForecastError('Failed to load forecast')
+        setForecast([])
+      }
     } catch (err) {
       setError(err.message || 'Failed to fetch weather data')
       setWeatherData(null)
+      setForecast([])
     } finally {
       setLoading(false)
+      setForecastLoading(false)
     }
   }
 
   const handleLocationSearch = async () => {
     setLocationLoading(true)
     setError(null)
+    setForecast([])
+    setForecastError(null)
+    setForecastLoading(true)
 
     try {
       const data = await WeatherService.getCurrentLocationWeather()
       setWeatherData(data)
+
+      try {
+        const forecastData = await WeatherService.get5DayForecastByCity(data.name)
+        setForecast(forecastData)
+      } catch (ferr) {
+        setForecastError('Failed to load forecast')
+        setForecast([])
+      }
     } catch (err) {
       setError(err.message || 'Failed to detect your location')
       setWeatherData(null)
+      setForecast([])
     } finally {
       setLocationLoading(false)
+      setForecastLoading(false)
     }
   }
 
@@ -130,6 +160,9 @@ function App() {  const [weatherData, setWeatherData] = useState(null)
               weatherData={weatherData}
               onAddToFavorites={addToFavorites}
               isFavorite={favorites.includes(weatherData.name)}
+              forecast={forecast}
+              forecastLoading={forecastLoading}
+              forecastError={forecastError}
             />
           )}
 

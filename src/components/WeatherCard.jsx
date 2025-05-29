@@ -1,8 +1,9 @@
 import React from 'react'
 import { Heart, MapPin, Thermometer, Eye, Wind, Droplets } from 'lucide-react'
 import './WeatherCard.css'
+import ForecastSection from './ForecastSection'
 
-const WeatherCard = ({ weatherData, onAddToFavorites, isFavorite }) => {
+const WeatherCard = ({ weatherData, onAddToFavorites, isFavorite, forecast = [], forecastLoading = false, forecastError = null }) => {
   if (!weatherData) return null
 
   const {
@@ -130,6 +131,23 @@ const WeatherCard = ({ weatherData, onAddToFavorites, isFavorite }) => {
 
       <div className="weather-footer">
         <p>Last updated: {new Date().toLocaleTimeString()}</p>
+      </div>
+      {/* Forecast Section */}
+      <div className="forecast-container" style={{ width: '100%', marginTop: '1.5rem' }}>
+        {forecastLoading && (
+          <div className="forecast-loading" aria-live="polite">
+            <div className="loading-spinner"></div>
+            <p>Loading 5-day forecast...</p>
+          </div>
+        )}
+        {forecastError && (
+          <div className="forecast-error" aria-live="polite">
+            <p>❌ {forecastError}</p>
+          </div>
+        )}
+        {!forecastLoading && !forecastError && forecast && forecast.length > 0 && (
+          <ForecastSection forecast={forecast} />
+        )}
       </div>
     </div>
   )
