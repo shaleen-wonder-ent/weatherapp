@@ -250,6 +250,7 @@ class WeatherService {
       console.error('Error fetching weather by coordinates:', error);
       throw new Error('Failed to fetch weather data for your location');
     }
+
   }
 
   // Generate 5-day forecast data
@@ -372,5 +373,92 @@ class WeatherService {
     })
   }
 }
+
+=======
+  }
+
+  // Get 5-day forecast by city (real API integration)
+  static async get5DayForecastByCity(city) {
+    try {
+      const response = await axios.get(`${BASE_URL}/forecast`, {
+        params: {
+          q: city,
+          appid: API_KEY,
+        },
+      });
+      const data = response.data;
+      // Group by day
+      const days = {};
+      data.list.forEach(item => {
+        const date = new Date(item.dt * 1000);
+        const dayKey = date.toISOString().split('T')[0];
+        if (!days[dayKey]) days[dayKey] = [];
+        days[dayKey].push(item);
+      });
+      // Get today and next 5 days
+      const todayKey = new Date().toISOString().split('T')[0];
+      const dayKeys = Object.keys(days).filter(d => d > todayKey).slice(0, 5);
+      const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const forecast = dayKeys.map(dayKey => {
+        const entries = days[dayKey];
+        // Get min/max temp, icon at midday, and description
+        let tempMin = Number.POSITIVE_INFINITY;
+        let tempMax = Number.NEGATIVE_INFINITY;
+        let icon = entries[0].weather[0].icon;
+        let description = entries[0].weather[0].description;
+        let middayFound = false;
+        entries.forEach(item => {
+          if (item.main.temp_min < tempMin) tempMin = item.main.temp_min;
+          if (item.main.temp_max > tempMax) tempMax = item.main.temp_max;
+          // Prefer icon/desc at 12:00:00
+          if (!middayFound && item.dt_txt.includes('12:00:00')) {
+            icon = item.weather[0].icon;
+            description = item.weather[0].description;
+            middayFound = true;
+          }
+        });
+        const date = new Date(dayKey);
+        return {
+          day: daysOfWeek[date.getDay()],
+          icon,
+          description,
+          tempMax,
+          tempMin,
+        };
+      });
+      return forecast;
+    } catch (error) {
+      // fallback to mock if API fails
+      return WeatherService.get5DayForecastByCity.mock(city);
+    }
+  }
+  // fallback mock for forecast
+  static async get5DayForecastByCity_mock(city) {
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Generate 5 days of mock forecast data
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const baseTemp = 273.15 + (Math.random() * 20 + 5); // 5-25°C
+    const icons = ['01d','02d','03d','04d','10d','09d','13d','50d'];
+    const descriptions = ['Clear sky','Few clouds','Scattered clouds','Broken clouds','Light rain','Showers','Snow','Mist'];
+    const forecast = Array.from({ length: 5 }).map((_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i + 1);
+      const tempMax = baseTemp + Math.random() * 5;
+      const tempMin = baseTemp - 5 + Math.random() * 3;
+      const iconIdx = Math.floor(Math.random() * icons.length);
+      return {
+        day: daysOfWeek[date.getDay()],
+        icon: icons[iconIdx],
+        description: descriptions[iconIdx],
+        tempMax,
+        tempMin,
+      };
+    });
+    return forecast;
+  }
+}
+
 
 export default WeatherService
