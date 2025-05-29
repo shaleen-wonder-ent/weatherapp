@@ -2,7 +2,9 @@ import React from 'react'
 import './ForecastCard.css'
 
 const ForecastCard = ({ forecastData }) => {
-  if (!forecastData) return null
+  if (!forecastData || !forecastData.main || !forecastData.weather || !forecastData.weather[0]) {
+    return null
+  }
 
   const {
     dt,
